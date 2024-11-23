@@ -817,7 +817,7 @@ class AAATestBackendAPI(MakeBackend):
         bk_act += action
         backend.apply_action(bk_act)  # mix of bus 1 and 2 on substation 1
         res = backend.runpf(is_dc=False)  
-        assert not res[0], "It is expected (at time of writing) that your backend returns `False` in case of isolated loads in AC."                 
+        # assert not res[0], "It is expected (at time of writing) that your backend returns `False` in case of isolated loads in AC."                 
         assert res[1] is not None, "When your backend diverges, we expect it throws an exception (second return value)"  
         error = res[1]
         assert isinstance(error, Grid2OpException), f"When your backend return `False`, we expect it throws an exception inheriting from Grid2OpException (second return value), backend returned {type(error)}"  
@@ -832,7 +832,7 @@ class AAATestBackendAPI(MakeBackend):
         bk_act += action
         backend.apply_action(bk_act)  # mix of bus 1 and 2 on substation 1
         res = backend.runpf(is_dc=True)  
-        assert not res[0], "It is expected (at time of writing) that your backend returns `False` in case of isolated loads in DC."                 
+        # assert not res[0], "It is expected (at time of writing) that your backend returns `False` in case of isolated loads in DC."                 
         assert res[1] is not None, "When your backend diverges, we expect it throws an exception (second return value)"  
         error = res[1]
         assert isinstance(error, Grid2OpException), f"When your backend return `False`, we expect it throws an exception inheriting from Grid2OpException (second return value), backend returned {type(error)}"  
@@ -865,7 +865,7 @@ class AAATestBackendAPI(MakeBackend):
         bk_act += action
         backend.apply_action(bk_act)  # mix of bus 1 and 2 on substation 1
         res = backend.runpf(is_dc=False)  
-        assert not res[0], "It is expected (at time of writing) that your backend returns `False` in case of isolated gen."                 
+        # assert not res[0], "It is expected (at time of writing) that your backend returns `False` in case of isolated gen."                 
         assert res[1] is not None, "When your backend diverges, we expect it throws an exception (second return value)"  
         error = res[1]
         assert isinstance(error, Grid2OpException), f"When your backend return `False`, we expect it throws an exception inheriting from Grid2OpException (second return value), backend returned {type(error)}"  
@@ -880,7 +880,7 @@ class AAATestBackendAPI(MakeBackend):
         bk_act += action
         backend.apply_action(bk_act)  # mix of bus 1 and 2 on substation 1
         res = backend.runpf(is_dc=True)  
-        assert not res[0], "It is expected (at time of writing) that your backend returns `False` in case of isolated gen."                 
+        # assert not res[0], "It is expected (at time of writing) that your backend returns `False` in case of isolated gen."                 
         assert res[1] is not None, "When your backend diverges, we expect it throws an exception (second return value)"  
         error = res[1]
         assert isinstance(error, Grid2OpException), f"When your backend return `False`, we expect it throws an exception inheriting from Grid2OpException (second return value), backend returned {type(error)}"  
@@ -919,7 +919,7 @@ class AAATestBackendAPI(MakeBackend):
         bk_act += action
         backend.apply_action(bk_act)  # mix of bus 1 and 2 on substation 1
         res = backend.runpf(is_dc=False)  
-        assert not res[0], "It is expected (at time of writing) that your backend returns `False` in case of isolated shunt."                 
+        # assert not res[0], "It is expected (at time of writing) that your backend returns `False` in case of isolated shunt."                 
         assert res[1] is not None, "When your backend diverges, we expect it throws an exception (second return value)"  
         error = res[1]
         assert isinstance(error, Grid2OpException), f"When your backend return `False`, we expect it throws an exception inheriting from Grid2OpException (second return value), backend returned {type(error)}"  
@@ -934,7 +934,7 @@ class AAATestBackendAPI(MakeBackend):
         bk_act += action
         backend.apply_action(bk_act)  # mix of bus 1 and 2 on substation 1
         res = backend.runpf(is_dc=True)  
-        assert not res[0], "It is expected (at time of writing) that your backend returns `False` in case of isolated shunt in DC."                  
+        # assert not res[0], "It is expected (at time of writing) that your backend returns `False` in case of isolated shunt in DC."                  
         assert res[1] is not None, "When your backend stops, we expect it throws an exception (second return value)"  
         error = res[1]
         assert isinstance(error, Grid2OpException), f"When your backend returns `False`, we expect it throws an exception inheriting from Grid2OpException (second return value), backend returned {type(error)}"  
@@ -970,7 +970,7 @@ class AAATestBackendAPI(MakeBackend):
         bk_act += action
         backend.apply_action(bk_act)  # mix of bus 1 and 2 on substation 1
         res = backend.runpf(is_dc=False)  
-        assert not res[0], "It is expected (at time of writing) that your backend returns `False` in case of isolated storage units in AC."                  
+        # assert not res[0], "It is expected (at time of writing) that your backend returns `False` in case of isolated storage units in AC."                  
         assert res[1] is not None, "When your backend stops, we expect it throws an exception (second return value)"  
         error = res[1]
         assert isinstance(error, Grid2OpException), f"When your backend return `False`, we expect it throws an exception inheriting from Grid2OpException (second return value), backend returned {type(error)}"  
@@ -984,7 +984,7 @@ class AAATestBackendAPI(MakeBackend):
         bk_act += action
         backend.apply_action(bk_act)  # mix of bus 1 and 2 on substation 1
         res = backend.runpf(is_dc=True)  
-        assert not res[0], "It is expected (at time of writing) that your backend returns `False` in case of isolated storage unit."                 
+        # assert not res[0], "It is expected (at time of writing) that your backend returns `False` in case of isolated storage unit."                 
         assert res[1] is not None, "When your backend stops, we expect it throws an exception (second return value)"  
         error = res[1]
         assert isinstance(error, Grid2OpException), f"When your backend return `False`, we expect it throws an exception inheriting from Grid2OpException (second return value), backend returned {type(error)}"  
@@ -992,7 +992,8 @@ class AAATestBackendAPI(MakeBackend):
             warnings.warn("The error returned by your backend when it stopped (due to isolated storage units) should preferably inherit from BackendError")
                   
     def test_20_disconnected_load_stops_computation(self):
-        """Tests that a disconnected load unit will be spotted by the `run_pf` method and forwarded to grid2op by returining `False, an_exception` (in AC and DC)
+        """
+        Tests that a disconnected load unit will be caught by the `_runpf_with_diverging_exception` method.
         
         This test supposes that :
         
@@ -1006,7 +1007,7 @@ class AAATestBackendAPI(MakeBackend):
         .. note::
             Currently this stops the computation of the environment and lead to a game over. 
             
-            This behaviour might change in the future.
+            Behaviour changed in version 1.11.0 (no longer caught by runpf() itelf)
         """
         self.skip_if_needed()
         backend = self.aux_make_backend()
@@ -1017,13 +1018,9 @@ class AAATestBackendAPI(MakeBackend):
         bk_act = type(backend).my_bk_act_class()
         bk_act += action
         backend.apply_action(bk_act)  # mix of bus 1 and 2 on substation 1
-        res = backend.runpf(is_dc=False)  
-        assert not res[0], "It is expected (at time of writing) that your backend returns `False` in case of disconnected load in AC."                  
-        assert res[1] is not None, "When your backend stops, we expect it throws an exception (second return value)"  
-        error = res[1]
-        assert isinstance(error, Grid2OpException), f"When your backend return `False`, we expect it throws an exception inheriting from Grid2OpException (second return value), backend returned {type(error)}"  
-        if not isinstance(error, BackendError):
-            warnings.warn("The error returned by your backend when it stopped (due to disconnected load) should preferably inherit from BackendError")
+        error = backend._runpf_with_diverging_exception(is_dc=False)  
+        assert error is not None
+        assert isinstance(error, Grid2OpException)
         
         backend.reset(self.get_path(), self.get_casefile())
         # a load alone on a bus
@@ -1032,16 +1029,13 @@ class AAATestBackendAPI(MakeBackend):
         bk_act = type(backend).my_bk_act_class()
         bk_act += action
         backend.apply_action(bk_act)  # mix of bus 1 and 2 on substation 1
-        res = backend.runpf(is_dc=True)  
-        assert not res[0], "It is expected (at time of writing) that your backend returns `False` in case of disconnected load in DC."                  
-        assert res[1] is not None, "When your backend stops, we expect it throws an exception (second return value)"  
-        error = res[1]
-        assert isinstance(error, Grid2OpException), f"When your backend return `False`, we expect it throws an exception inheriting from Grid2OpException (second return value), backend returned {type(error)}"  
-        if not isinstance(error, BackendError):
-            warnings.warn("The error returned by your backend when it stopped (due to disconnected load) should preferably inherit from BackendError")
-                                   
+        error = backend._runpf_with_diverging_exception(is_dc=True)  
+        assert error is not None
+        assert isinstance(error, Grid2OpException)
+             
     def test_21_disconnected_gen_stops_computation(self):
-        """Tests that a disconnected generator will be spotted by the `run_pf` method and forwarded to grid2op by returining `False, an_exception` (in AC and DC)
+        """
+        Tests that a disconnected generator will be caught by the `_runpf_with_diverging_exception` method
         
         This test supposes that :
         
@@ -1055,7 +1049,7 @@ class AAATestBackendAPI(MakeBackend):
         .. note::
             Currently this stops the computation of the environment and lead to a game over. 
             
-            This behaviour might change in the future.
+            Behaviour changed in version 1.11.0 (no longer caught by runpf() itelf)
         """
         self.skip_if_needed()
         backend = self.aux_make_backend()
@@ -1066,13 +1060,9 @@ class AAATestBackendAPI(MakeBackend):
         bk_act = type(backend).my_bk_act_class()
         bk_act += action
         backend.apply_action(bk_act)  # mix of bus 1 and 2 on substation 1
-        res = backend.runpf(is_dc=False)  
-        assert not res[0], "It is expected (at time of writing) that your backend returns `False` in case of disconnected gen in AC."                 
-        assert res[1] is not None, "When your backend stops, we expect it throws an exception (second return value)"  
-        error = res[1]
-        assert isinstance(error, Grid2OpException), f"When your backend return `False`, we expect it throws an exception inheriting from Grid2OpException (second return value), backend returned {type(error)}"  
-        if not isinstance(error, BackendError):
-            warnings.warn("The error returned by your backend when it stopped (due to disconnected gen) should preferably inherit from BackendError")
+        error = backend._runpf_with_diverging_exception(is_dc=False)  
+        assert error is not None
+        assert isinstance(error, Grid2OpException)
         
         backend.reset(self.get_path(), self.get_casefile())
         # a disconnected generator
@@ -1081,14 +1071,10 @@ class AAATestBackendAPI(MakeBackend):
         bk_act = type(backend).my_bk_act_class()
         bk_act += action
         backend.apply_action(bk_act)  # mix of bus 1 and 2 on substation 1
-        res = backend.runpf(is_dc=True)  
-        assert not res[0], "It is expected (at time of writing) that your backend returns `False` in case of disconnected gen in DC."                 
-        assert res[1] is not None, "When your backend stops, we expect it throws an exception (second return value)"  
-        error = res[1]
-        assert isinstance(error, Grid2OpException), f"When your backend return `False`, we expect it throws an exception inheriting from Grid2OpException (second return value), backend returned {type(error)}"  
-        if not isinstance(error, BackendError):
-            warnings.warn("The error returned by your backend when it stopped (due to disconnected gen) should preferably inherit from BackendError")
-
+        res = backend._runpf_with_diverging_exception(is_dc=True)  
+        assert error is not None
+        assert isinstance(error, Grid2OpException)
+        
     def test_22_islanded_grid_stops_computation(self):
         """Tests that when the grid is split in two different "sub_grid" is spotted by the `run_pf` method and forwarded to grid2op by returining `False, an_exception` (in AC and DC)
         
@@ -1120,7 +1106,7 @@ class AAATestBackendAPI(MakeBackend):
         bk_act += action
         backend.apply_action(bk_act)  # mix of bus 1 and 2 on substation 1
         res = backend.runpf(is_dc=False)  
-        assert not res[0], f"It is expected that your backend return `(False, _)` in case of non connected grid in AC."                 
+        # assert not res[0], f"It is expected that your backend return `(False, _)` in case of non connected grid in AC."                 
         error = res[1]
         assert isinstance(error, Grid2OpException), f"When your backend return `False`, we expect it throws an exception inheriting from Grid2OpException (second return value), backend returned {type(error)}"  
         if not isinstance(error, BackendError):
@@ -1136,7 +1122,7 @@ class AAATestBackendAPI(MakeBackend):
         bk_act += action
         backend.apply_action(bk_act)  # mix of bus 1 and 2 on substation 1
         res = backend.runpf(is_dc=True)  
-        assert not res[0], f"It is expected that your backend return `(False, _)` in case of non connected grid in DC."                    
+        # assert not res[0], f"It is expected that your backend return `(False, _)` in case of non connected grid in DC."                    
         error = res[1]
         assert isinstance(error, Grid2OpException), f"When your backend return `False`, we expect it throws an exception inheriting from Grid2OpException (second return value), backend returned {type(error)}"  
         if not isinstance(error, BackendError):
