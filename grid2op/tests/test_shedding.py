@@ -21,7 +21,6 @@ class TestShedding(unittest.TestCase):
         self.env.close()
 
     def test_shedding_parameter_is_true(self):
-        assert hasattr(self.env, "_allow_detachment")
         assert self.env._allow_detachment is True
         assert self.env.backend.detachment_is_allowed is True
 

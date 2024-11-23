@@ -536,7 +536,7 @@ class GridObjects:
 
     sub_info : ClassVar[np.ndarray] = None
     dim_topo : ClassVar[np.ndarray] = -1
-    _allow_detachment : ClassVar[bool] = DEFAULT_ALLOW_DETACHMENT
+    detachment_is_allowed : ClassVar[bool] = DEFAULT_ALLOW_DETACHMENT
 
     # to which substation is connected each element
     load_to_subid : ClassVar[np.ndarray] = None
@@ -738,7 +738,7 @@ class GridObjects:
         """        
         cls.shunts_data_available = False
         cls.n_busbar_per_sub = DEFAULT_N_BUSBAR_PER_SUB
-        cls._allow_detachment = DEFAULT_ALLOW_DETACHMENT
+        cls.detachment_is_allowed = DEFAULT_ALLOW_DETACHMENT
         
         # for redispatching / unit commitment
         cls._li_attr_disp = [
@@ -3087,7 +3087,7 @@ class GridObjects:
             # different `n_busbar_per_sub`
             name_res += f"_{gridobj.n_busbar_per_sub}"
             
-        if gridobj._allow_detachment != DEFAULT_ALLOW_DETACHMENT:
+        if gridobj.detachment_is_allowed != DEFAULT_ALLOW_DETACHMENT:
             name_res += "_allowDetach"
                 
         if _local_dir_cls is not None and gridobj._PATH_GRID_CLASSES is not None:
@@ -3210,7 +3210,7 @@ class GridObjects:
         if glop_ver < version.parse("1.11.0.dev0"):
             # Detachment did not exist, default value should have
             # no effect
-            cls._allow_detachment = DEFAULT_ALLOW_DETACHMENT
+            cls.detachment_is_allowed = DEFAULT_ALLOW_DETACHMENT
             res = True
             
         if glop_ver < version.parse("1.11.0.dev0"):
@@ -3884,7 +3884,7 @@ class GridObjects:
                     res[k] = v
             return
        
-        save_to_dict(res, cls, "_allow_detachment", str, copy_)
+        save_to_dict(res, cls, "detachment_is_allowed", str, copy_)
 
         if not _topo_vect_only:
             # all the attributes bellow are not needed for the "first call"
@@ -4280,7 +4280,7 @@ class GridObjects:
             # n_busbar_per_sub
             res["n_busbar_per_sub"] = cls.n_busbar_per_sub
         
-        res["_allow_detachment"] = cls._allow_detachment
+        res["detachment_is_allowed"] = cls.detachment_is_allowed
         
         # avoid further computation and save it
         if not as_list and not _topo_vect_only:
@@ -4356,16 +4356,16 @@ class GridObjects:
             cls._PATH_GRID_CLASSES = None
             
         # Detachment of Loads / Generators
-        if '_allow_detachment' in dict_:
-            if dict_["_allow_detachment"] == "True":
-                cls._allow_detachment = True 
-            elif dict_["_allow_detachment"] == "False":
-                cls._allow_detachment = False
+        if 'detachment_is_allowed' in dict_:
+            if dict_["detachment_is_allowed"] == "True":
+                cls.detachment_is_allowed = True 
+            elif dict_["detachment_is_allowed"] == "False":
+                cls.detachment_is_allowed = False
             else:
-                raise ValueError(f"'allow_detachment' (value: {dict_["_allow_detachment"]}'')" +
-                                 "could not be converted to Boolean ")
+                raise ValueError(f"'detachment_is_allowed' (value: {dict_["detachment_is_allowed"]}'')" +
+                                  "could not be converted to Boolean ")
         else: # Compatibility for older versions
-            cls._allow_detachment = DEFAULT_ALLOW_DETACHMENT
+            cls.detachment_is_allowed = DEFAULT_ALLOW_DETACHMENT
         
         if 'n_busbar_per_sub' in dict_:
             cls.n_busbar_per_sub = int(dict_["n_busbar_per_sub"])
@@ -5161,7 +5161,7 @@ class {cls.__name__}({cls._INIT_GRID_CLS.__name__}):
 
     sub_info = {sub_info_str}
     dim_topo = {cls.dim_topo}
-    _allow_detachment = {cls._allow_detachment}
+    detachment_is_allowed = {cls.detachment_is_allowed}
     
     # to which substation is connected each element
     load_to_subid = {load_to_subid_str}

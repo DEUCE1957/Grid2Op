@@ -298,7 +298,7 @@ class Backend(GridObjects, ABC):
             At least, at time of writing there is no good reason to do so.
         """
         self._missing_detachment_support = False
-        if type(self._allow_detachment != DEFAULT_ALLOW_DETACHMENT):
+        if type(self).detachment_is_allowed != DEFAULT_ALLOW_DETACHMENT:
             warnings.warn("You asked in 'make' function to allow shedding. This is"
                           f"not possible with a backend of type {type(self)}.")
         self.detachment_is_allowed = DEFAULT_ALLOW_DETACHMENT
