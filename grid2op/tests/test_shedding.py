@@ -12,7 +12,7 @@ class TestShedding(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
             self.env = grid2op.make("rte_case5_example", param=p,
-                                    allow_detachment=True, test=True)
+                                    allow_detachment=True, n_busbar=3, test=True)
             self.env.set_id("00") # Reproducibility
         self.load_lookup = {name:i for i,name in enumerate(self.env.name_load)}
         self.gen_lookup = {name:i for i,name in enumerate(self.env.name_gen)}
@@ -21,8 +21,9 @@ class TestShedding(unittest.TestCase):
         self.env.close()
 
     def test_shedding_parameter_is_true(self):
-        assert hasattr(self.env, "allow_shedding")
+        assert hasattr(self.env, "_allow_detachment")
         assert self.env._allow_detachment is True
+        assert self.env.backend.detachment_is_allowed is True
 
     def test_shed_single_load(self):
         # Check that a single load can be shed

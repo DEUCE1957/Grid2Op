@@ -691,6 +691,10 @@ class GridObjects:
         cls.n_busbar_per_sub = n_busbar_per_sub
         
     @classmethod
+    def set_detachment_is_allowed(cls, detachment_is_allowed: bool) -> None:
+        cls.detachment_is_allowed = detachment_is_allowed
+        
+    @classmethod
     def tell_dim_alarm(cls, dim_alarms: int) -> None:
         if cls.dim_alarms != 0:
             # number of alarms has already been set, i issue a warning
