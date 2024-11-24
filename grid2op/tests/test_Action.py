@@ -31,7 +31,7 @@ def _get_action_grid_class():
     GridObjects._clear_class_attribute()
     GridObjects.env_name = "test_action_env"
     GridObjects.n_busbar_per_sub = 2
-    GridObjects._allow_detachment = False
+    GridObjects.detachment_is_allowed = False
     GridObjects.n_gen = 5
     GridObjects.name_gen = np.array(["gen_{}".format(i) for i in range(5)])
     GridObjects.n_load = 11
