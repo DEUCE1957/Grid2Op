@@ -937,7 +937,7 @@ class Environment(BaseEnv):
 
     def reset_grid(self,
                    init_act_opt : Optional[BaseAction]=None, 
-                   method:Literal["combine", "ignore"]="combine"):
+                   method : Literal["combine", "ignore"]="combine"):
         """
         INTERNAL
 
@@ -1057,10 +1057,17 @@ class Environment(BaseEnv):
             be used, experiments might not be reproducible)
             
         options: dict
-            Some options to "customize" the reset call. For example specifying the "time serie id" (grid2op >= 1.9.8) to use 
-            or the "initial state of the grid" (grid2op >= 1.10.2) or to 
-            start the episode at some specific time in the time series (grid2op >= 1.10.3) with the 
-            "init ts" key.
+            Some options to "customize" the reset call. For example (see detailed example bellow) :
+            
+            - "time serie id" (grid2op >= 1.9.8) to use a given time serie from the input data
+            - "init state" that allows you to apply a given "action" when generating the 
+              initial observation (grid2op >= 1.10.2)
+            - "init ts" (grid2op >= 1.10.3) to specify to which "steps" of the time series 
+              the episode will start
+            - "max step" (grid2op >= 1.10.3) : maximum number of steps allowed for the episode
+            - "thermal limit" (grid2op >= 1.11.0): which thermal limit to use for this episode 
+              (and the next ones, until they are changed)
+            - "init datetime": which time stamp is used in the first observation of the episode.
             
             See examples for more information about this. Ignored if 
             not set.
@@ -1283,6 +1290,28 @@ class Environment(BaseEnv):
             that `set_max_iter` is permenanent: it impacts all the future episodes and not only
             the next one.
             
+        If you want your environment to start at a given time stamp you can do:
+        
+        .. code-block:: python
+        
+            import grid2op
+            env_name = "l2rpn_case14_sandbox"
+            
+            env = grid2op.make(env_name)
+            obs = env.reset(options={"init datetime": "2024-12-06 00:00"})
+            obs.year == 2024
+            obs.month == 12
+            obs.day == 6
+            
+        .. seealso::
+            If you specify "init datetime" then the observation resulting to the 
+            `env.reset` call will have this datetime. If you specify also `"skip ts"`
+            option the behaviour does not change: the first observation will 
+            have the date time attributes you specified. 
+            
+            In other words, the "init datetime" refers to the initial observation of the
+            episode and NOT the initial time present in the time series.
+            
         """
         # process the "options" kwargs
         # (if there is an init state then I need to process it to remove the 
@@ -1311,6 +1340,8 @@ class Environment(BaseEnv):
             if ambiguous:
                 raise Grid2OpException("You provided an invalid (ambiguous) action to set the 'init state'") from except_tmp
             init_state.remove_change()
+        if self.observation_space.obs_env is not None:
+            self.observation_space.obs_env.reset()
         super().reset(seed=seed, options=options)
         
         if options is not None and "max step" in options:                
@@ -1324,6 +1355,7 @@ class Environment(BaseEnv):
         else:
             # reset previous max iter to value set with `env.set_max_iter(...)` (or -1 by default)
             self.chronics_handler._set_max_iter(self._max_iter)
+            
         self.chronics_handler.next_chronics()
         self.chronics_handler.initialize(
             self.backend.name_load,
@@ -1342,6 +1374,8 @@ class Environment(BaseEnv):
         self._reset_flexibility()
         self._reset_vectors_and_timings()  # it need to be done BEFORE to prevent cascading failure when there has been
             
+        if options is not None and "init datetime" in options:
+            self.chronics_handler.set_current_datetime(options["init datetime"])
         self.reset_grid(init_state, method)
         if self.viewer_fig is not None:
             del self.viewer_fig
@@ -1349,16 +1383,24 @@ class Environment(BaseEnv):
         
         if skip_ts is not None:
             self._reset_vectors_and_timings() 
-            
+            if options is None:
+                init_dt = None
+            elif "init datetime" in options:
+                init_dt = options["init datetime"]
+            else:
+                init_dt = None
+                
             if skip_ts < 1:
                 raise Grid2OpException(f"In `env.reset` the kwargs `init ts` should be an int >= 1, found {options['init ts']}")
             if skip_ts == 1:
                 self._init_obs = None
+                if init_dt is not None:
+                    self.chronics_handler.set_current_datetime(init_dt) 
                 self.step(self.action_space())
             elif skip_ts == 2:
-                self.fast_forward_chronics(1)
+                self.fast_forward_chronics(1, init_dt)
             else:
-                self.fast_forward_chronics(skip_ts)
+                self.fast_forward_chronics(skip_ts, init_dt)
             
         # if True, then it will not disconnect lines above their thermal limits
         self._reset_vectors_and_timings()  # and it needs to be done AFTER to have proper timings at tbe beginning

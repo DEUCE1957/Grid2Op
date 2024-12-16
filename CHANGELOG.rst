@@ -116,6 +116,17 @@ Native multi agents support:
 - [FIXED] the `obs.get_forecast_env` : in some cases the resulting first
   observation (obtained from `for_env.reset()`) did not have the correct
   topology.
+- [FIXED] issue https://github.com/Grid2op/grid2op/issues/665 (`obs.reset()`
+  was not correctly implemented: some attributes were forgotten)
+- [FIXED] issue https://github.com/Grid2op/grid2op/issues/667 (`act.as_serializable_dict()`
+  was not correctly implemented AND the `_aux_affect_object_int` and `_aux_affect_object_float`
+  have been also fixed - weird behaviour when you give them a list with the exact length of the
+  object you tried to modified (for example a list with a size of `n_load` that affected the loads))
+- [FIXED] a bug when using the `DoNothingHandler` for the maintenance and the 
+  environment data
+- [FIXED] an issue preventing to set the thermal limit in the options
+  if the last simulated action lead to a game over
+- [FIXED] logos now have the correct URL
 - [ADDED] possibility to set the "thermal limits" when calling `env.reset(..., options={"thermal limit": xxx})`
 - [ADDED] possibility to retrieve some structural information about elements with
   with `gridobj.get_line_info(...)`, `gridobj.get_load_info(...)`, `gridobj.get_gen_info(...)` 
@@ -124,6 +135,8 @@ Native multi agents support:
 - [ADDED] a method to check the KCL (`obs.check_kirchhoff`) directly from the observation
   (previously it was only possible to do it from the backend). This should 
   be used for testing purpose only
+- [ADDED] possibility to set the initial time stamp of the observation in the `env.reset`
+  kwargs by using `env.reset(..., options={"init datetime": XXX})`
 - [IMPROVED] possibility to set the injections values with names
   to be consistent with other way to set the actions (*eg* set_bus)
 - [IMPROVED] error messages when creating an action which changes the injections
@@ -143,88 +156,12 @@ Native multi agents support:
   class is generated for all mixes)
 - [IMRPOVED] handling of disconnected elements in the backend no more
   raise error. The base `Backend` class does that.
-  =======
-[TODO]
---------------------
-- [???] use some kind of "env.get_state()" when simulating instead of recoding everything "by hand"
-- [???] use "backend.get_action_to_set()" in simulate
-- [???] model better the voltage, include voltage constraints
-- [???] use the prod_p_forecasted and co in the "next_chronics" of simulate
-- [???] in deepcopy of env, make tests that the "pointers" are properly propagated in the attributes (for example
-  `envcpy._game_rules.legal_action` should not be copied when building `envcpy._helper_action_env`)
-- [???] add multi agent
-- [???] make observation read only / immutable for all its properties (and not just for `prod_p`)
-- [???] better logging
-- [???] shunts in observation too, for real (but what to do when backend is not shunt compliant to prevent the
-  stuff to break)
-- [???] model agent acting at different time frame
-- [???] model delay in observations
-- [???] model delay in action
-- [???] Code and test the "load from disk" method
-- [???] add a "plot action" method
-- [???] in MultiEnv, when some converter of the observations are used, have each child process to compute
-  it in parallel and transfer the resulting data.
-- [???] "asynch" multienv
-- [???] properly model interconnecting powerlines
-
-Next few releases
----------------------------------
-
-General grid2op improvments:
-
-- numpy 2 compat (need pandapower for that)
-- TODO bug on maintenance starting at midnight (they are not correctly handled in the observation)
-  => cf script test_issue_616
-- TODO A number of max buses per sub
-- TODO in the runner, save multiple times the same scenario
-- TODO improve type annotation for all public functions
-- TODO add a "_cst_" or something for the `const` members of all the classes
-- TODO properly document and type hint all public members of all the public classes
-- TODO properly implement the copy and "deepcopy" API
-- TODO Make the redispatching data independent from the time step (eg instead of "in MW / step" have it in "MW / h")
-  and have grid2op convert it to MW / step
-
-Better multi processing support: 
-
-- automatic read from local dir also on windows !
-- TODO doc for the "new" feature of automatic "experimental_read_from_local_dir"
-- TODO extend this feature to work also on windows based OS 
-- TODO finish the test in automatic_classes
-
-
-Features related to gymnasium compatibility:
-
-- TODO put the Grid2opEnvWrapper directly in grid2op as GymEnv
-- TODO faster gym_compat (especially for DiscreteActSpace and BoxGymObsSpace)
-- TODO Notebook for tf_agents
-- TODO Notebook for acme
-- TODO Notebook using "keras rl" (see https://keras.io/examples/rl/ppo_cartpole/)
-- TODO example for MCTS https://github.com/bwfbowen/muax et https://github.com/google-deepmind/mctx
-- TODO done and truncated properly handled in gym_compat module (when game over
-  before the end it's probably truncated and not done) 
-- TODO when reset, have an attribute "reset_infos" with some infos about the
-  way reset was called.
-- TODO on CI: test only gym, only gymnasium and keep current test for both gym and gymnasium
-- TODO refactor the gym_compat module to have a "legacy" stuff exactly like today
-  and the current class only supporting gymnasium (with possibly improved speed)
-- TODO in the gym env, make the action_space and observation_space attribute
-  filled automatically (see ray integration, it's boring to have to copy paste...)
-- [???] closer integration with `gymnasium` especially the "register env", being able to 
-  create an env from a string etc.
-
-Grid2op extended features:
-
-- TODO ForecastEnv in MaskedEnv ! (and obs.simulate there too !)
-- TODO in multi-mix increase the reset options with the mix the user wants
-- TODO L2RPN scores as reward (sum loads after the game over and have it in the final reward)
-- TODO work on the reward class (see https://github.com/Grid2Op/grid2op/issues/584)
-- TODO jax everything that can be: create a simple env based on jax for topology manipulation, without
-  redispatching or rules
-- TODO backend in jax, maybe ?
-
-Native multi agents support:
-
-- cf ad-hoc branch (dev-multiagents)
+- [IMPROVED] the `act.as_serializable_dict()` to be more 'backend agnostic'as
+  it nows tries to use the name of the elements in the json output
+- [IMPROVED] the way shunt data are digested in the `BaseAction` class (it is now 
+  possible to use the same things as for the other types of element)
+- [IMPROVED] grid2op does not require the `chronics` folder when using the `FromHandlers`
+  class
 
 [1.10.4] - 2024-10-15
 -------------------------

@@ -16,6 +16,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 import pandas as pd
 from typing import Tuple, Optional, Any, Dict, Union
+
 try:
     from typing import Self
 except ImportError:
@@ -34,12 +35,10 @@ from grid2op.Exceptions import (
     DivergingPowerflow,
     Grid2OpException,
 )
-from grid2op.Space import GridObjects, DEFAULT_N_BUSBAR_PER_SUB, DEFAULT_ALLOW_DETACHMENT
+from grid2op.Space import GridObjects, ElTypeInfo, DEFAULT_N_BUSBAR_PER_SUB, DEFAULT_ALLOW_DETACHMENT
 
 
 # TODO method to get V and theta at each bus, could be in the same shape as check_kirchoff
-
-
 class Backend(GridObjects, ABC):
     """
     INTERNAL
@@ -1227,6 +1226,8 @@ class Backend(GridObjects, ABC):
             raise BackendError(
                 "storages_info method is not implemented yet there is batteries on the grid."
             )
+        empty_ = np.array([])
+        return empty_, empty_, empty_
 
     def storage_deact_for_backward_comaptibility(self) -> None:
         """
@@ -1253,7 +1254,7 @@ class Backend(GridObjects, ABC):
         """
         warnings.warn(message="please use backend.check_kirchhoff() instead", category=DeprecationWarning)
         return self.check_kirchhoff()
-    
+
     def check_kirchhoff(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         INTERNAL
@@ -1292,225 +1293,58 @@ class Backend(GridObjects, ABC):
             - second element represents the busbar in the substation (0 or 1 usually)
 
         """
-
+        cls = type(self)
         p_or, q_or, v_or, *_ = self.lines_or_info()
         p_ex, q_ex, v_ex, *_ = self.lines_ex_info()
         p_gen, q_gen, v_gen = self.generators_info()
         p_load, q_load, v_load = self.loads_info()
-        cls = type(self)
+        topo_vect = self.get_topo_vect()
+        lineor_info = ElTypeInfo(
+            topo_vect[cls.line_or_pos_topo_vect],
+            p_or,
+            q_or,
+            v_or,
+            )
+        lineex_info = ElTypeInfo(
+            topo_vect[cls.line_ex_pos_topo_vect],
+            p_ex,
+            q_ex,
+            v_ex,
+            )
+        load_info = ElTypeInfo(
+            topo_vect[cls.load_pos_topo_vect],
+            p_load,
+            q_load,
+            v_load,
+            )
+        gen_info = ElTypeInfo(
+            topo_vect[cls.gen_pos_topo_vect],
+            p_gen, q_gen, v_gen,
+            )
         if cls.n_storage > 0:
             p_storage, q_storage, v_storage = self.storages_info()
-
-        # fist check the "substation law" : nothing is created at any substation
-        p_subs = np.zeros(cls.n_sub, dtype=dt_float)
-        q_subs = np.zeros(cls.n_sub, dtype=dt_float)
-
-        # check for each bus
-        p_bus = np.zeros((cls.n_sub, cls.n_busbar_per_sub), dtype=dt_float)
-        q_bus = np.zeros((cls.n_sub, cls.n_busbar_per_sub), dtype=dt_float)
-        v_bus = (
-            np.zeros((cls.n_sub, cls.n_busbar_per_sub, 2), dtype=dt_float) - 1.0
-        )  # sub, busbar, [min,max]
-        topo_vect = self.get_topo_vect()
-
-        # bellow i'm "forced" to do a loop otherwise, numpy do not compute the "+=" the way I want it to.
-        # for example, if two powerlines are such that line_or_to_subid is equal (eg both connected to substation 0)
-        # then numpy do not guarantee that `p_subs[self.line_or_to_subid] += p_or` will add the two "corresponding p_or"
-        # TODO this can be vectorized with matrix product, see example in obs.flow_bus_matrix (BaseObervation.py)
-        for i in range(cls.n_line):
-            sub_or_id = cls.line_or_to_subid[i]
-            sub_ex_id = cls.line_ex_to_subid[i]
-            if (topo_vect[cls.line_or_pos_topo_vect[i]] == -1 or
-                topo_vect[cls.line_ex_pos_topo_vect[i]] == -1):
-                # line is disconnected
-                continue
-            loc_bus_or = topo_vect[cls.line_or_pos_topo_vect[i]] - 1
-            loc_bus_ex = topo_vect[cls.line_ex_pos_topo_vect[i]] - 1
-            
-            # for substations
-            p_subs[sub_or_id] += p_or[i]
-            p_subs[sub_ex_id] += p_ex[i]
-
-            q_subs[sub_or_id] += q_or[i]
-            q_subs[sub_ex_id] += q_ex[i]
-
-            # for bus
-            p_bus[sub_or_id, loc_bus_or] += p_or[i]
-            q_bus[sub_or_id, loc_bus_or] += q_or[i]
-
-            p_bus[ sub_ex_id, loc_bus_ex] += p_ex[i]
-            q_bus[sub_ex_id, loc_bus_ex] += q_ex[i]
-
-            # fill the min / max voltage per bus (initialization)
-            if (v_bus[sub_or_id, loc_bus_or,][0] == -1):
-                v_bus[sub_or_id, loc_bus_or,][0] = v_or[i]
-            if (v_bus[sub_ex_id, loc_bus_ex,][0] == -1):
-                v_bus[sub_ex_id, loc_bus_ex,][0] = v_ex[i]
-            if (v_bus[sub_or_id, loc_bus_or,][1]== -1):
-                v_bus[sub_or_id, loc_bus_or,][1] = v_or[i]
-            if (v_bus[sub_ex_id, loc_bus_ex,][1]== -1):
-                v_bus[sub_ex_id, loc_bus_ex,][1] = v_ex[i]
-
-            # now compute the correct stuff
-            if v_or[i] > 0.0:
-                # line is connected
-                v_bus[sub_or_id, loc_bus_or,][0] = min(v_bus[sub_or_id, loc_bus_or,][0],v_or[i],)
-                v_bus[sub_or_id, loc_bus_or,][1] = max(v_bus[sub_or_id, loc_bus_or,][1],v_or[i],)
-                
-            if v_ex[i] > 0:
-                # line is connected
-                v_bus[sub_ex_id, loc_bus_ex,][0] = min(v_bus[sub_ex_id, loc_bus_ex,][0],v_ex[i],)
-                v_bus[sub_ex_id, loc_bus_ex,][1] = max(v_bus[sub_ex_id, loc_bus_ex,][1],v_ex[i],)
-        
-        for i in range(cls.n_gen):
-            gptv = cls.gen_pos_topo_vect[i]
-            
-            if topo_vect[gptv] == -1:
-                # gen is disconnected
-                continue
-            
-            # for substations
-            p_subs[cls.gen_to_subid[i]] -= p_gen[i]
-            q_subs[cls.gen_to_subid[i]] -= q_gen[i]
-
-            loc_bus = topo_vect[gptv] - 1
-            # for bus
-            p_bus[
-                cls.gen_to_subid[i], loc_bus
-            ] -= p_gen[i]
-            q_bus[
-                cls.gen_to_subid[i], loc_bus
-            ] -= q_gen[i]
-
-            # compute max and min values
-            if v_gen[i]:
-                # but only if gen is connected
-                v_bus[cls.gen_to_subid[i], loc_bus][
-                    0
-                ] = min(
-                    v_bus[
-                        cls.gen_to_subid[i], loc_bus
-                    ][0],
-                    v_gen[i],
-                )
-                v_bus[cls.gen_to_subid[i], loc_bus][
-                    1
-                ] = max(
-                    v_bus[
-                        cls.gen_to_subid[i], loc_bus
-                    ][1],
-                    v_gen[i],
-                )
-
-        for i in range(cls.n_load):
-            gptv = cls.load_pos_topo_vect[i]
-            
-            if topo_vect[gptv] == -1:
-                # load is disconnected
-                continue
-            loc_bus = topo_vect[gptv] - 1
-            
-            # for substations
-            p_subs[cls.load_to_subid[i]] += p_load[i]
-            q_subs[cls.load_to_subid[i]] += q_load[i]
-
-            # for buses
-            p_bus[
-                cls.load_to_subid[i], loc_bus
-            ] += p_load[i]
-            q_bus[
-                cls.load_to_subid[i], loc_bus
-            ] += q_load[i]
-
-            # compute max and min values
-            if v_load[i]:
-                # but only if load is connected
-                v_bus[cls.load_to_subid[i], loc_bus][
-                    0
-                ] = min(
-                    v_bus[
-                        cls.load_to_subid[i], loc_bus
-                    ][0],
-                    v_load[i],
-                )
-                v_bus[cls.load_to_subid[i], loc_bus][
-                    1
-                ] = max(
-                    v_bus[
-                        cls.load_to_subid[i], loc_bus
-                    ][1],
-                    v_load[i],
-                )
-
-        for i in range(cls.n_storage):
-            gptv = cls.storage_pos_topo_vect[i]
-            if topo_vect[gptv] == -1:
-                # storage is disconnected
-                continue
-            loc_bus = topo_vect[gptv] - 1
-            
-            p_subs[cls.storage_to_subid[i]] += p_storage[i]
-            q_subs[cls.storage_to_subid[i]] += q_storage[i]
-            p_bus[
-                cls.storage_to_subid[i], loc_bus
-            ] += p_storage[i]
-            q_bus[
-                cls.storage_to_subid[i], loc_bus
-            ] += q_storage[i]
-
-            # compute max and min values
-            if v_storage[i] > 0:
-                # the storage unit is connected
-                v_bus[
-                    cls.storage_to_subid[i],
-                    loc_bus,
-                ][0] = min(
-                    v_bus[
-                        cls.storage_to_subid[i],
-                        loc_bus,
-                    ][0],
-                    v_storage[i],
-                )
-                v_bus[
-                    self.storage_to_subid[i],
-                    loc_bus,
-                ][1] = max(
-                    v_bus[
-                        cls.storage_to_subid[i],
-                        loc_bus,
-                    ][1],
-                    v_storage[i],
-                )
+            storage_info = ElTypeInfo(
+                topo_vect[cls.storage_pos_topo_vect],
+                p_storage, q_storage, v_storage,
+            )
+        else:
+            storage_info = None
 
         if cls.shunts_data_available:
             p_s, q_s, v_s, bus_s = self.shunt_info()
-            for i in range(cls.n_shunt):
-                if bus_s[i] == -1:
-                    # shunt is disconnected
-                    continue
-                
-                # for substations
-                p_subs[cls.shunt_to_subid[i]] += p_s[i]
-                q_subs[cls.shunt_to_subid[i]] += q_s[i]
-
-                # for buses
-                p_bus[cls.shunt_to_subid[i], bus_s[i] - 1] += p_s[i]
-                q_bus[cls.shunt_to_subid[i], bus_s[i] - 1] += q_s[i]
-
-                # compute max and min values
-                v_bus[cls.shunt_to_subid[i], bus_s[i] - 1][0] = min(
-                    v_bus[cls.shunt_to_subid[i], bus_s[i] - 1][0], v_s[i]
-                )
-                v_bus[cls.shunt_to_subid[i], bus_s[i] - 1][1] = max(
-                    v_bus[cls.shunt_to_subid[i], bus_s[i] - 1][1], v_s[i]
-                )
-        else:
-            warnings.warn(
-                "Backend.check_kirchhoff Impossible to get shunt information. Reactive information might be "
-                "incorrect."
+            shunt_info = ElTypeInfo(
+                bus_s,
+                p_s, q_s, v_s,
             )
-        diff_v_bus = np.zeros((cls.n_sub, cls.n_busbar_per_sub), dtype=dt_float)
-        diff_v_bus[:, :] = v_bus[:, :, 1] - v_bus[:, :, 0]
+        else:
+            shunt_info = None
+        
+        p_subs, q_subs, p_bus, q_bus, diff_v_bus = cls._aux_check_kirchhoff(lineor_info,
+                                                                            lineex_info,
+                                                                            load_info,
+                                                                            gen_info,
+                                                                            storage_info,
+                                                                            shunt_info)
         return p_subs, q_subs, p_bus, q_bus, diff_v_bus
 
     def _fill_names_obj(self):
