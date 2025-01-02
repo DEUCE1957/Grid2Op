@@ -88,5 +88,10 @@ class TestFlexibility(unittest.TestCase):
         minimum_feasible_load = np.maximum(np.zeros(flex_mask.sum()), expected_load)
         assert np.isclose(flex_obs.load_p[flex_mask], minimum_feasible_load, atol=0.001).all()
 
+    def test_flex_in_obs(self):
+        flex_obs, *_ = self.env.step(self.flex_small_up)
+        # Target Flexibility should match provided action (accumulates)
+        assert np.all(np.isclose(flex_obs.target_flex, self.flex_small_up.flexibility))
+        
 if __name__ == "__main__":
     unittest.main()

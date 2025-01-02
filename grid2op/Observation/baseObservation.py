@@ -4313,8 +4313,8 @@ class BaseObservation(GridObjects):
         
         # flexibility
         # TODO: Add _target_flex and _actual_flex to BaseEnv / GridObject
-        self.target_flex[:] = np.zeros(env.n_load, dtype=dt_float)
-        self.actual_flex[:] = np.zeros(env.n_load, dtype=dt_float)
+        self.target_flex[:] = env._target_flex #np.zeros(env.n_load, dtype=dt_float)
+        self.actual_flex[:] = env._actual_flex #np.zeros(env.n_load, dtype=dt_float)
         
         self._thermal_limit[:] = env.get_thermal_limit()
 
