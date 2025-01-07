@@ -2161,7 +2161,7 @@ class BaseEnv(GridObjects, RandomObject, ABC):
             | (np.abs(self._actual_flex) >= 1e-7)
             | (self._target_flex != self._actual_flex)
         )
-        load_involved[~self.load_flexible] = False
+        load_involved[np.logical_or(~self.load_flexible, np.isclose(self._target_flex, 0.0))] = False
         incr_in_load_chronics = new_load_p - (self._load_demand_t_flex - self._actual_flex)
 
         # Check if the constraints are violated
