@@ -43,7 +43,7 @@ class TestFlexibility(unittest.TestCase):
             {"flexibility": [(el, 0.01) for el in np.nonzero(self.env.load_flexible)[0]]}
         )
         self.flex_small_down = self.env.action_space(
-            {"flexibility": [(el, -0.01) for el in np.nonzero(self.env.load_flexible)[0]]}
+            {"flexibility": [(el, -0.02) for el in np.nonzero(self.env.load_flexible)[0]]}
         )
         self.flex_small_up_single = self.env.action_space(
             {"flexibility": [(np.nonzero(self.env.load_flexible)[0][0], 0.01)]}
@@ -51,7 +51,6 @@ class TestFlexibility(unittest.TestCase):
         self.flex_small_down_single = self.env.action_space(
             {"flexibility": [(np.nonzero(self.env.load_flexible)[0][0], -0.01)]}
         )
-
 
     def test_zero_flex(self):
         flex_obs, *_ = self.env.step(self.flex_all_zero)
@@ -83,22 +82,15 @@ class TestFlexibility(unittest.TestCase):
         
     def test_flex_small_up_single(self):
         flex_obs, *_ = self.env.step(self.flex_small_up_single)
-        mask = np.where(np.arange(self.env.n_load) == np.nonzero(self.env.load_flexible)[0][0], True, False)
         # Change in load relative to DoNothing scenario (i.e. normal Chronics)
-        change_in_involved_load = flex_obs.load_p[mask] - self.ref_obs.load_p[mask]
-        change_in_non_involved_load = flex_obs.load_p[~mask] - self.ref_obs.load_p[~mask]
-        assert np.isclose(change_in_involved_load, self.flex_small_up_single.flexibility[mask], atol=0.001).all()
-        assert np.isclose(change_in_non_involved_load, 0.0, atol=0.001).all()
+        change_in_load = flex_obs.load_p - self.ref_obs.load_p
+        assert np.isclose(change_in_load, self.flex_small_up_single.flexibility, atol=0.001).all()
         
     def test_flex_small_down_single(self):
         flex_obs, *_  = self.env.step(self.flex_small_down_single)
-        mask = np.where(np.arange(self.env.n_load) == np.nonzero(self.env.load_flexible)[0][0], True, False)
-
         # Change in load relative to DoNothing scenario (i.e. normal Chronics)
-        change_in_involved_load = flex_obs.load_p[mask] - self.ref_obs.load_p[mask]
-        change_in_non_involved_load = flex_obs.load_p[~mask] - self.ref_obs.load_p[~mask]
-        assert np.isclose(change_in_involved_load, self.flex_small_down_single.flexibility[mask], atol=0.001).all()
-        assert np.isclose(change_in_non_involved_load, 0.0, atol=0.001).all()
+        change_in_load = flex_obs.load_p - self.ref_obs.load_p
+        assert np.isclose(change_in_load, self.flex_small_down_single.flexibility, atol=0.001).all()
 
     def test_flex_max_ramp_up(self):
         flex_obs, *_ = self.env.step(self.flex_max_ramp_up)

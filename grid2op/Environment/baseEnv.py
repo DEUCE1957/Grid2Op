@@ -2157,11 +2157,10 @@ class BaseEnv(GridObjects, RandomObject, ABC):
         incr_in_gen_chronics = new_gen_p - (self._gen_activeprod_t_redisp - self._actual_dispatch)
         
         load_involved = (
-            (new_load_p > 0.0)
-            | (np.abs(self._actual_flex) >= 1e-7)
+            (np.abs(self._actual_flex) >= 1e-7)
             | (self._target_flex != self._actual_flex)
         )
-        load_involved[np.logical_or(~self.load_flexible, np.isclose(self._target_flex, 0.0))] = False
+        load_involved[~self.load_flexible] = False
         incr_in_load_chronics = new_load_p - (self._load_demand_t_flex - self._actual_flex)
 
         # Check if the constraints are violated
@@ -2196,6 +2195,7 @@ class BaseEnv(GridObjects, RandomObject, ABC):
                 avail_gen_up_tmp = np.minimum(p_max_gen_up_tmp,
                                               self.gen_max_ramp_up[self.gen_redispatchable])
                 if self._parameters.ALLOW_FLEX_LOAD_SWITCH_OFF and self.flexible_load_available:
+                    # TODO: Use load_involved here?
                     p_min_load_down_tmp = (0.0 - self._load_demand_t_flex[self.load_flexible])
                     avail_load_down_tmp = np.maximum(p_min_load_down_tmp,
                                                      -self.load_max_ramp_down[self.load_flexible])
