@@ -183,7 +183,7 @@ class CompactEpisodeData():
             for i, other_reward_name in enumerate(self.other_reward_names):
                 self.other_rewards[t-1, i] = info["rewards"][other_reward_name]
         self.times[t - 1] = duration
-        self.legal[t - 1] = not info["is_illegal"]
+        self.legal[t - 1] = (not info["is_illegal"]) or (not info["is_dispatching_illegal"]) or (not info["is_illegal_reco"])
         self.ambiguous[t - 1] = info["is_ambiguous"]
         if done:
             self.game_over_timestep = t
